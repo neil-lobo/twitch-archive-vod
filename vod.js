@@ -13,6 +13,11 @@ function log(str) {
     console.log(`(UTC/GMT${(-1)*date.getTimezoneOffset()/60}) ${date.toLocaleString()} |> ${str}`)
 }
 
+function logError(str) {
+    const date = new Date()
+    console.error(`(UTC/GMT${(-1)*date.getTimezoneOffset()/60}) ${date.toLocaleString()} |> ${str}`)
+}
+
 async function isValidToken(token) {
     const res = await fetch("https://id.twitch.tv/oauth2/validate",
         {
@@ -69,6 +74,30 @@ async function getToken() {
     }
 }
 
+async function getStreamers() {
+    let streamers = {}
+    try {
+        const res = await fetch(`${process.env.API_URL}/streamers`)
+        if (res.status != 200) {
+            logError(`/streamers returned status: ${res.status}`)
+            return {}
+        }
+        
+        const data = await res.json()
+        for (let i = 0; i < data.length; i++) {
+            const streamer = data[i]
+            for (let id in streamer) {
+                // console.log(streamer[id])
+                streamers[id] = streamer[id]
+            }
+        }
+
+    } catch(err) {
+        logError(err)
+    }
+    return streamers
+}
+
 function logVod(data) {
     const streamers = JSON.parse(fs.readFileSync("streamers.json", {encoding:'utf8'}))
     const username = streamers[data.user_id]
@@ -88,8 +117,6 @@ function logVod(data) {
         }
         fs.writeFileSync(`vods/${username}/${fileName}`, JSON.stringify(data, null, 4))
     }
-
-
 }
 
 async function main() {
@@ -98,7 +125,7 @@ async function main() {
         exit()
     }
 
-    const streamers = JSON.parse(fs.readFileSync("streamers.json", {encoding:'utf8'}))
+    const streamers = await getStreamers()
     const token = await getToken()
     
     for(let id in streamers) {
@@ -129,4 +156,4 @@ async function main() {
 }
 
 main()
-setInterval(main, 1000 * 15)
+// setInterval(main, 1000 * 15)
