@@ -106,6 +106,12 @@ async function logVod(data, streamers) {
     const json = await res.json()
     if (json != null) return
 
+    const thumbnail_url_split = data.thumbnail_url.split("/")
+    data["hidden_url"] = {
+        "subdomain": thumbnail_url_split[4],
+        "path": thumbnail_url_split[5],
+    }
+
     res = await fetch(`${process.env.API_URL}/vods`, {
         "method": "POST",
         "headers": {'Content-Type': 'application/json'},
