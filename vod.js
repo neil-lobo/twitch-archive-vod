@@ -87,7 +87,6 @@ async function getStreamers() {
         for (let i = 0; i < data.length; i++) {
             const streamer = data[i]
             for (let id in streamer) {
-                // console.log(streamer[id])
                 streamers[id] = streamer[id]
             }
         }
@@ -98,25 +97,22 @@ async function getStreamers() {
     return streamers
 }
 
-function logVod(data) {
-    const streamers = JSON.parse(fs.readFileSync("streamers.json", {encoding:'utf8'}))
-    const username = streamers[data.user_id]
-
-    if (!fs.existsSync(`vods/${username}`)) {
-        log(`Creating ${username} folder!`)
-        fs.mkdirSync(`vods/${username}`)
+async function logVod(data, streamers) {
+    let res = await fetch(`${process.env.API_URL}/vod/stream_id/${data.stream_id}`)
+    if (res.status != 200) {
+        log(`/vod/stream_id/${data.stream_id} Status: ${res.status}`)
+        return
     }
+    const json = await res.json()
+    if (json != null) return
 
-    const fileName = `${data.published_at.split("T")[0]}_${data.id}.json`
-    if (!fs.existsSync(`vods/${username}/${fileName}`)) {
-        log(`Logging new vod: ${username}/${fileName}`)
-        const thumbnail_url_split = data.thumbnail_url.split("/")
-        data["hidden_url"] = {
-            "subdomain": thumbnail_url_split[4],
-            "path": thumbnail_url_split[5],
-        }
-        fs.writeFileSync(`vods/${username}/${fileName}`, JSON.stringify(data, null, 4))
-    }
+    res = await fetch(`${process.env.API_URL}/vods`, {
+        "method": "POST",
+        "headers": {'Content-Type': 'application/json'},
+        "body": JSON.stringify(data)
+    })
+    if (res.status == 201) log(`Logged new vod: ${streamers[data.user_id]}/${data.stream_id}`)
+    else log(`POST /vods Status: ${res.status}`)
 }
 
 async function main() {
@@ -150,10 +146,10 @@ async function main() {
         const json = await res.json()
         const lastStream = json.data[0]
         if (lastStream.thumbnail_url != "") {
-            logVod(lastStream)
+            await logVod(lastStream, streamers)
         }
     }
 }
 
 main()
-// setInterval(main, 1000 * 15)
+setInterval(main, 1000 * 15)
