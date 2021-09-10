@@ -84,13 +84,10 @@ async function getStreamers() {
         }
         
         const data = await res.json()
-        for (let i = 0; i < data.length; i++) {
-            const streamer = data[i]
-            for (let id in streamer) {
-                streamers[id] = streamer[id]
-            }
+        for (let key of Object.keys(data)) {
+            const streamer = data[key]
+            streamers[key] = streamer
         }
-
     } catch(err) {
         logError(err)
     }
