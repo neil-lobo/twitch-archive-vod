@@ -157,5 +157,6 @@ async function main() {
     }
 }
 
+log("[VOD] VOD Logger Started!")
 main()
 setInterval(main, 1000 * 15)
